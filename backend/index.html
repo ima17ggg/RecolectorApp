@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recolector</title>
+  <style>
+    :root {
+      --bg:#0f1115; --panel:#181c21; --border:#2a3139; --text:#e6edf3; --muted:#94a3b8; --accent:#2563eb; --accent-hover:#1d4ed8; --radius:18px;
+    }
+    body { margin:0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); display:flex; min-height:100vh; }
+    .center { margin:auto; max-width:620px; padding:42px 46px 50px; background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); box-shadow: 0 20px 40px -12px rgba(0,0,0,.5); display:flex; flex-direction:column; gap:28px; }
+    h1 { margin:0; font-size: clamp(2.2rem,6vw,3rem); letter-spacing:-2px; line-height:1; }
+    p { margin:0; line-height:1.5; font-size:1rem; }
+    .muted { color: var(--muted); }
+    a.btn { display:inline-block; text-decoration:none; background: var(--accent); color:#fff; padding:16px 26px; border-radius:14px; font-weight:600; font-size:1rem; letter-spacing:.5px; box-shadow:0 6px 16px -6px rgba(0,0,0,.5); transition:.2s; }
+    a.btn:hover { background: var(--accent-hover); }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip { background:#222c; padding:6px 12px; border-radius:40px; font-size:.7rem; letter-spacing:1px; text-transform:uppercase; color: var(--muted); border:1px solid var(--border); }
+    footer { text-align:center; font-size:.75rem; margin-top:8px; color: var(--muted); }
+    @media (max-width:680px){ .center { margin: 30px auto; width: min(100% - 40px, 620px); padding:36px 32px 42px; } h1{ font-size:2.4rem; } }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <h1>Recolector</h1>
+    <p class="muted">Página de prueba de captura fotos y firma desde la app móvil.</p>
+    <div class="chips">
+      <span class="chip">Fotos</span>
+      <span class="chip">Firma</span>
+      <span class="chip">SQL Server</span>
+      <span class="chip">Express</span>
+      <span class="chip">Uploads</span>
+    </div>
+    <form id="loginForm" style="display:flex;flex-direction:column;gap:14px;background:#121418;padding:22px 22px 26px;border:1px solid var(--border);border-radius:16px;">
+      <h2 style="margin:0;font-size:1.3rem;letter-spacing:-1px;">Login</h2>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Correo
+          <input type="email" id="logCorreo" required placeholder="tu@correo.com" style="margin-top:6px;width:100%;background:#1e2227;border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:10px;font-size:.9rem;outline:none;" />
+        </label>
+        <label style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Contraseña
+          <input type="password" id="logPassword" required placeholder="••••••••" style="margin-top:6px;width:100%;background:#1e2227;border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:10px;font-size:.9rem;outline:none;" />
+        </label>
+      </div>
+      <button type="submit" style="background:var(--accent);color:#fff;border:none;padding:14px 18px;border-radius:12px;font-weight:600;font-size:1rem;cursor:pointer;letter-spacing:.5px;">Entrar</button>
+      <div id="loginStatus" style="min-height:18px;font-size:.75rem;font-weight:600;"></div>
+      <p style="margin:4px 0 0;font-size:.65rem;color:var(--muted);line-height:1.4;">Si el sitio es público, el login puede no ser necesario. Igual puedes probarlo.</p>
+    </form>
+    <footer>&copy; <span id="year"></span> Recolector Demo</footer>
+  </div>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const API_AUTH = '/api/auth/login';
+    const form = document.getElementById('loginForm');
+    const statusBox = document.getElementById('loginStatus');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusBox.textContent = 'Autenticando...';
+      statusBox.style.color = '#f59e0b';
+      try {
+        const payload = {
+          Correo: document.getElementById('logCorreo').value.trim(),
+          Contraseña: document.getElementById('logPassword').value
+        };
+        const res = await fetch(API_AUTH, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || data.error || 'Error');
+        statusBox.textContent = 'Login correcto. Redirigiendo...';
+        statusBox.style.color = '#10b981';
+        setTimeout(() => { window.location.href = '/registros'; }, 600);
+      } catch (err) {
+        statusBox.textContent = 'Fallo: ' + err.message;
+        statusBox.style.color = '#ef4444';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Registros</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f1115;
+      --bg-alt: #1b1f24;
+      --text: #eceff1;
+      --muted: #94a3b8;
+      --border: #2a3139;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --radius: 14px;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --ok: #10b981;
+    }
+    .light {
+      --bg: #f5f7fa;
+      --bg-alt: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #d8e0e9;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --danger: #dc2626;
+      --warn: #d97706;
+      --ok: #059669;
+    }
+    html, body { height:100%; }
+    body { margin:0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    h1 { margin:0; font-size: clamp(1.8rem, 4vw, 2.4rem); letter-spacing: -1px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:24px 28px 10px; }
+    .grow { flex-grow:1; }
+    button, .btn { background: var(--accent); color:#fff; border:none; padding:10px 18px; border-radius: 8px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,.25); transition:.2s; }
+    button:hover, .btn:hover { background: var(--accent-hover); }
+    button.secondary { background: var(--bg-alt); color: var(--text); border:1px solid var(--border); box-shadow:none; }
+    button.secondary:hover { background: var(--border); }
+    button.outline { background:transparent; color: var(--text); border:1px solid var(--border); box-shadow:none; }
+    button.outline:hover { background: var(--bg-alt); }
+    #status { font-size:.85rem; font-weight:600; letter-spacing:.5px; }
+    .status-ok { color: var(--ok); }
+    .status-error { color: var(--danger); }
+    .status-warn { color: var(--warn); }
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; }
+    main { padding:10px 28px 40px; }
+    .grid { display:grid; gap:18px; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); margin-top:22px; }
+    .card { background: var(--bg-alt); border:1px solid var(--border); border-radius: var(--radius); padding:14px 16px 16px; display:flex; flex-direction:column; gap:10px; position:relative; overflow:hidden; }
+    .card:hover { border-color: var(--accent); }
+    .date { font-size:.75rem; font-weight:600; text-transform:uppercase; color: var(--muted); letter-spacing:.5px; }
+    .thumbs { display:flex; gap:8px; flex-wrap:wrap; }
+    .thumbs img { width:100%; aspect-ratio: 4/3; object-fit:cover; border-radius:10px; border:1px solid var(--border); cursor:pointer; background:#111; }
+    .thumbs .half { flex:1 1 calc(50% - 8px); }
+    .signatureWrapper img { width:100%; aspect-ratio: 3/2; object-fit:contain; background:#000; border-radius:10px; border:1px solid var(--border); cursor:pointer; }
+    .empty { margin-top:40px; text-align:center; color: var(--muted); font-size:1rem; }
+    .pill { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.4); backdrop-filter: blur(6px); padding:4px 10px; font-size:.65rem; letter-spacing:1px; border-radius:40px; color:#fff; font-weight:600; }
+    footer { padding:26px 32px 40px; font-size:.75rem; color: var(--muted); text-align:center; }
+    /* Modal */
+    .modal { position:fixed; inset:0; background:rgba(15,17,21,.85); display:none; align-items:center; justify-content:center; z-index:50; padding:30px; }
+    .modal.open { display:flex; }
+    .modal-content { max-width: min(1000px, 92vw); max-height: 82vh; position:relative; }
+    .modal-content img { width:100%; height:100%; object-fit:contain; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+    .modal-close { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.55); border:none; color:#fff; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+    /* Toggle dark/light */
+    .modeToggle { display:flex; align-items:center; gap:6px; font-size:.75rem; cursor:pointer; user-select:none; }
+    .modeToggle input { accent-color: var(--accent); }
+    .autoRefreshToggle { font-size:.75rem; display:flex; align-items:center; gap:6px; cursor:pointer; }
+    .autoRefreshToggle input { accent-color: var(--accent); }
+    @media (hover: hover) { .thumbs img:hover, .signatureWrapper img:hover { outline:2px solid var(--accent); outline-offset:2px; } }
+  </style>
+</head>
+<body class="dark">
+  <header>
+    <h1>Registros</h1>
+    <div class="grow"></div>
+    <label class="autoRefreshToggle"><input type="checkbox" id="autoRefresh" checked /> Auto refrescar</label>
+    <label class="modeToggle"><input type="checkbox" id="modeSwitch" /> Claro</label>
+    <button id="btnRefrescar" class="outline" title="Refrescar manualmente">Refrescar</button>
+  </header>
+  <main>
+    <div id="status" class="status-warn">Esperando...</div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" style="display:none;">No hay registros todavía.</div>
+  </main>
+  <footer>
+    &copy; <span id="year"></span> Recolector - Vista de registros.
+  </footer>
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">Cerrar ✕</button>
+      <img id="modalImg" alt="preview" />
+    </div>
+  </div>
+
+  <script>
+    const API_REGISTROS = '/api/registros';
+    const gridEl = document.getElementById('grid');
+    const statusEl = document.getElementById('status');
+    const emptyEl = document.getElementById('empty');
+    const modalEl = document.getElementById('modal');
+    const modalImg = document.getElementById('modalImg');
+    const autoRefreshCb = document.getElementById('autoRefresh');
+    const modeSwitch = document.getElementById('modeSwitch');
+    let timer = null;
+
+    function isBase64Image(val) { return typeof val === 'string' && val.startsWith('data:image'); }
+    function isBase64(val){ return typeof val === 'string' && val.startsWith('data:'); }
+
+    function makeImgSrc(value) {
+      if (!value) return null;
+      if (isBase64Image(value) || isBase64(value)) return value;
+      if (/\.jpg$|\.png$|\.jpeg$|\.webp$|\.gif$/i.test(value)) return `/uploads/${value}`;
+      return null;
+    }
+
+    function openModal(src) {
+      if (!src) return; modalImg.src = src; modalEl.classList.add('open');
+    }
+    document.getElementById('modalClose').addEventListener('click', () => modalEl.classList.remove('open'));
+    modalEl.addEventListener('click', e => { if (e.target === modalEl) modalEl.classList.remove('open'); });
+
+    async function cargarRegistros() {
+      statusEl.textContent = 'Cargando...';
+      statusEl.className = 'status-warn';
+      try {
+        const res = await fetch(API_REGISTROS);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || data.error || res.status);
+        statusEl.textContent = `Registros: ${data.length}`;
+        statusEl.className = 'status-ok';
+        renderGrid(data);
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.className = 'status-error';
+        renderGrid([]);
+      }
+    }
+
+    function renderGrid(items) {
+      if (!items.length) {
+        gridEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      gridEl.innerHTML = items.map(r => {
+        const foto1 = makeImgSrc(r.Foto1);
+        const foto2 = makeImgSrc(r.Foto2);
+        const firma = makeImgSrc(r.Firma);
+        return `<div class="card" data-id="${r.Id || ''}">
+          <span class="pill">${r.Id || ''}</span>
+          <div class="date">${formatDate(r.FechaRegistro)}</div>
+          <div class="thumbs">
+            ${foto1 ? `<img class="half" src="${foto1}" alt="Foto1" data-full="${foto1}" />` : '<div class="half small">Sin Foto 1</div>'}
+            ${foto2 ? `<img class="half" src="${foto2}" alt="Foto2" data-full="${foto2}" />` : '<div class="half small">Sin Foto 2</div>'}
+          </div>
+          <div class="signatureWrapper">
+            ${firma ? `<img src="${firma}" alt="Firma" data-full="${firma}" />` : '<div class="small">Sin Firma</div>'}
+          </div>
+        </div>`;
+      }).join('');
+      [...gridEl.querySelectorAll('img[data-full]')].forEach(img => {
+        img.addEventListener('click', () => openModal(img.dataset.full));
+      });
+    }
+
+    function formatDate(sqlDate) {
+      if (!sqlDate) return '';
+      try { const d = new Date(sqlDate); if (isNaN(d.getTime())) return sqlDate; return d.toLocaleString(); } catch { return sqlDate; }
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      if (autoRefreshCb.checked) {
+        timer = setInterval(cargarRegistros, 15000); // cada 15s
+      }
+    }
+    function stopAutoRefresh() { if (timer) clearInterval(timer); timer = null; }
+
+    document.getElementById('btnRefrescar').addEventListener('click', cargarRegistros);
+    autoRefreshCb.addEventListener('change', startAutoRefresh);
+    modeSwitch.addEventListener('change', () => {
+      if (modeSwitch.checked) document.body.classList.add('light'); else document.body.classList.remove('light');
+    });
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    window.addEventListener('load', () => { cargarRegistros(); startAutoRefresh(); });
+  </script>
+</body>
+</html>
