@@ -1,4 +1,4 @@
-# Recolector de Fotos y Firma
+0# Recolector de Fotos y Firma
 
 Aplicación para capturar **dos fotos** y una **firma digital** desde una app móvil hecha con Expo, y enviar todo a un backend en Node.js/Express que guarda los registros en MySQL y los expone en una vista web.
 

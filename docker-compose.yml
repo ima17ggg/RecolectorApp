@@ -1,0 +1,47 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: recolector-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: ${TZ:-America/Mexico_City}
+    ports:
+      # Puerto en tu máquina -> puerto del contenedor (3307 para no chocar con un MySQL local)
+      - "${DB_HOST_PORT:-3307}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: recolector-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET}
+      DB_SERVER: db # nombre del servicio de MySQL dentro de la red de Docker
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      TZ: ${TZ:-America/Mexico_City}
+    ports:
+      - "${PORT:-4000}:4000"
+    volumes:
+      # Las fotos/firmas quedan guardadas en tu carpeta backend/uploads
+      - ./backend/uploads:/app/uploads
+
+volumes:
+  db_data:
